@@ -4,11 +4,9 @@ import org.pcap4j.core.*;
 import org.pcap4j.packet.Packet;
 import org.pcap4j.util.ByteArrays;
 
-import java.io.EOFException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
-import java.util.concurrent.TimeoutException;
 
 
 public class Capturer {
@@ -16,29 +14,33 @@ public class Capturer {
 
     //    static String folderpath = "C:\\Users\\1\\Downloads\\pcap\\";
      private Storage s = new Storage();
-     private Parser p=new Parser(s);
-      String hex;
-      int count;
+     Parser p=new Parser(s);
+     private String g_hex ,e_hex;
+     private int count;
+     private String text="";
+      ArrayList<String> devsfound=new ArrayList<>();
+        List<PcapNetworkInterface> devs;
 
-//      public PcapNetworkInterface devs() throws PcapNativeException {
-//          List<PcapNetworkInterface> devs = Pcaps.findAllDevs();
-//      }
-//Делаем список devs , через кнопку выбираем, передаем dev в capture
+    public Parser getP() {
+        return p;
+    }
 
-    public void capture() throws PcapNativeException, EOFException, TimeoutException, NotOpenException {
+    public String getText() {
+        return text;
+    }
 
-//        File file = new File(folderpath);
-//        File[] files = file.listFiles();
-
-        List<PcapNetworkInterface> devs = Pcaps.findAllDevs();
-        System.out.println("Network devices found:");
+    public void getdevs() throws PcapNativeException {
+         devs = Pcaps.findAllDevs();
         for (int i = 0; i < devs.size(); i++) {
-            System.out.println("#" + i + ": " + devs.get(i).getName());
-
+            devsfound.add(devs.get(i).getName());
+            text+=devsfound.get(i)+"  "+ i +" ; ";
         }
 
-        Scanner sc = new Scanner(System.in);
-        int i = sc.nextInt();
+
+    }
+    public void capture(int i) throws PcapNativeException, NotOpenException {
+//        File file = new File(folderpath);
+//        File[] files = file.listFiles();
         PcapNetworkInterface in = devs.get(i);
         System.out.println("device "+in);
 
@@ -46,17 +48,21 @@ public class Capturer {
         String filter = "ether proto 0x88b8"; //Capture only Ethernet type ether proto 0x88b8
         handle.setFilter(filter, BpfProgram.BpfCompileMode.OPTIMIZE);
 
+
         PacketListener listener = new PacketListener() {
             @Override
             public void gotPacket(Packet packet) {
                 System.out.println("Packet "+ count +" received: "+ packet);
-                System.out.println("Timestamp: "+handle.getTimestamp());
-                byte[] head = (packet.getPayload().getRawData());
-                hex = ByteArrays.toHexString(head, " ");
-                System.out.println(hex );
-                int[] bytes = new int[head.length];
-                for (int j = 0; j < head.length; j++) {
-                    bytes[j] = head[j] & 0xFF;
+                byte[] etherheader=packet.getHeader().getRawData();
+                byte[] gooseheader = (packet.getPayload().getRawData());
+                g_hex = ByteArrays.toHexString(gooseheader, " ");
+                e_hex = ByteArrays.toHexString(etherheader, ":");
+                p.setDestination(e_hex.substring(0,17));
+                p.setSource(e_hex.substring(18,35));
+
+                int[] bytes = new int[gooseheader.length];
+                for (int j = 0; j < gooseheader.length; j++) {
+                    bytes[j] = gooseheader[j] & 0xFF;
                 }
                 System.out.println("bait "+Arrays.toString(bytes));
                 s.setPacket(packet);
