@@ -1,22 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TreeView?>
+<?import javafx.scene.control.TreeTableColumn?>
+<?import javafx.scene.control.TreeTableView?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="700.0" style="-fx-background-color: #2e3348;" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GUI.appController">
-    <children>
-        <AnchorPane layoutY="84.0" prefHeight="316.0" prefWidth="700.0" style="-fx-background-color: #fafafa;">
-         <children>
-            <TreeView fx:id="packet_tree" layoutX="1.0" prefHeight="316.0" prefWidth="357.0" />
-            <Button fx:id="appbut" layoutX="540.0" layoutY="60.0" mnemonicParsing="false" text="Button" />
-         </children></AnchorPane>
-        <Label layoutX="227.0" layoutY="14.0" text="Goose sniffer" textFill="#dadada">
-            <font>
-                <Font name="Arial" size="39.0" />
-            </font>
-        </Label>
-    </children>
+<AnchorPane fx:id="pane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="459.0" style="-fx-background-color: #fafafa;" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GUI.appController">
+   <children>
+      <TreeTableView fx:id="TableView" prefHeight="400.0" prefWidth="459.0">
+        <columns>
+          <TreeTableColumn fx:id="col1" prefWidth="227.0" text="Packet " />
+          <TreeTableColumn fx:id="col2" prefWidth="231.0" text="Value" />
+        </columns>
+      </TreeTableView>
+   </children>
 </AnchorPane>

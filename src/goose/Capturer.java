@@ -11,15 +11,28 @@ import java.util.List;
 
 public class Capturer {
 
-
     //    static String folderpath = "C:\\Users\\1\\Downloads\\pcap\\";
      private Storage s = new Storage();
      Parser p=new Parser(s);
-     private String g_hex ,e_hex;
-     private int count;
+    private volatile  static int check=0;
+    private volatile static boolean Captured=false;
+
+    public  boolean isCaptured() {
+        return Captured;
+    }
+
+    private String g_hex ,e_hex;
+     private volatile static int count;
      private String text="";
       ArrayList<String> devsfound=new ArrayList<>();
         List<PcapNetworkInterface> devs;
+    PcapNetworkInterface in;
+     static String name;
+
+
+    public String getName() {
+       return name;
+    }
 
     public Parser getP() {
         return p;
@@ -36,22 +49,23 @@ public class Capturer {
             text+=devsfound.get(i)+"  "+ i +" ; ";
         }
 
-
     }
-    public void capture(int i) throws PcapNativeException, NotOpenException {
+    public synchronized void capture(int i) throws PcapNativeException, NotOpenException {
+
 //        File file = new File(folderpath);
 //        File[] files = file.listFiles();
-        PcapNetworkInterface in = devs.get(i);
+        in = devs.get(i);
         System.out.println("device "+in);
-
-        PcapHandle handle=in.openLive(65536, PcapNetworkInterface.PromiscuousMode.PROMISCUOUS,10);
+        name=in.toString();
+        PcapHandle handle=in.openLive(65536, PcapNetworkInterface.PromiscuousMode.PROMISCUOUS,20);
         String filter = "ether proto 0x88b8"; //Capture only Ethernet type ether proto 0x88b8
         handle.setFilter(filter, BpfProgram.BpfCompileMode.OPTIMIZE);
 
 
-        PacketListener listener = new PacketListener() {
+        PacketListener listener = new PacketListener()  {
             @Override
-            public void gotPacket(Packet packet) {
+            public synchronized void gotPacket(Packet packet) {
+                Captured=true;
                 System.out.println("Packet "+ count +" received: "+ packet);
                 byte[] etherheader=packet.getHeader().getRawData();
                 byte[] gooseheader = (packet.getPayload().getRawData());
@@ -60,11 +74,13 @@ public class Capturer {
                 p.setDestination(e_hex.substring(0,17));
                 p.setSource(e_hex.substring(18,35));
 
+
                 int[] bytes = new int[gooseheader.length];
                 for (int j = 0; j < gooseheader.length; j++) {
                     bytes[j] = gooseheader[j] & 0xFF;
                 }
                 System.out.println("bait "+Arrays.toString(bytes));
+
                 s.setPacket(packet);
                 s.setAPPID(start_info(bytes, s.getLENGTH().length, 0));
                 s.setLENGTH(start_info(bytes, s.getLENGTH().length, 2));
@@ -80,14 +96,17 @@ public class Capturer {
                 s.setTIME_DATA(apdu_filler(bytes,s.getTIME_TAG(),s.getTIME_LENGTH()));
                 s.setST_NUM_DATA(apdu_filler(bytes,s.getST_NUM_TAG(),s.getST_NUM_LENGTH()));
                 s.setSQ_NUM_DATA(apdu_filler(bytes,s.getSQ_NUM_TAG(),s.getSQ_NUM_LENGTH()));
+                s.setTEST_DATA(apdu_filler(bytes,s.getTEST_TAG(),s.getTEST_LENGTH()));
                 s.setTIME_DATA(apdu_filler(bytes,s.getTIME_TAG(),s.getTIME_LENGTH()));
                 s.setCONF_REF_DATA(apdu_filler(bytes,s.getCONF_REF_TAG(),s.getCONF_REF_LENGTH()));
                 s.setNDS_COM_DATA(apdu_filler(bytes,s.getNDS_COM_TAG(),s.getNDS_COM_LENGTH()));
                 s.setNUM_DAT_SET_ENTRIES_DATA(apdu_filler(bytes,s.getNUM_DAT_SET_ENTRIES_TAG(),s.getNUM_DAT_SET_ENTRIES_LENGTH()));
                 s.setALL_DATA_DATA(apdu_filler(bytes,s.getALL_DATA_TAG(),s.getALL_DATA_LENGTH()));
-                count++;
                 p.show();
+                count++;
+
                 System.out.println();
+                Captured=false;
             }
         };
         try {

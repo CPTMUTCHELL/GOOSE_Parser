@@ -7,6 +7,7 @@ public class Storage {
     private int TIME_ALLOWED_TO_LIVE_LENGTH;
     private Packet packet;
 
+
     public Packet getPacket() {
         return packet;
     }

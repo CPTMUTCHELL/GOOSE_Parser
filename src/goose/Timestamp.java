@@ -31,6 +31,7 @@ import java.util.Date;
  */
 public class Timestamp {
 
+
 	/**
 	 * Byte array that holds binary representation of this timestamp.
 	 */
