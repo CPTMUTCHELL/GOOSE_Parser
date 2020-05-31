@@ -1,5 +1,4 @@
 package goose;
-
 import java.util.Arrays;
 
 
@@ -23,19 +22,19 @@ public  class Parser {
     }
 
     private Storage s;
-    private String gocbRef,datSet,goID;
-    private int appid;
-    private int length;
-    private int timeAllowedtoLive;
-    private int sqNum,stNum;
-    private int confRef;
-    private int numdatSet;
-    private int reserved1;
-    private int reserved2;
-    private boolean test, ndsCom;
-    private int allData_items;
-    private boolean[] bools;
-    private int[] strings;
+    private static String gocbRef,datSet,goID;
+    private static int appid;
+    private static int length;
+    private static int timeAllowedtoLive;
+    private static int sqNum,stNum;
+    private static int confRef;
+    private static int numdatSet;
+    private static int reserved1;
+    private static int reserved2;
+    private static boolean test, ndsCom;
+    private static int allData_items;
+    private static boolean[] bools;
+    private static int[] strings;
 
     public String getDatSet() {
         return datSet;
@@ -89,11 +88,11 @@ public  class Parser {
         return gocbRef;
     }
 
-      public  int getTimeAllowedtoLive() {
+    public  int getTimeAllowedtoLive() {
         return timeAllowedtoLive;
     }
 
-    public int getAppid() {
+    public  int getAppid() {
         return appid;
     }
 
@@ -109,7 +108,7 @@ public  class Parser {
         return strings;
     }
 
-    public void show(){
+    public synchronized void show()  {
         appid=Hex_to_INT(s.getAPPID());
         length=Hex_to_INT(s.getLENGTH());
         reserved1=Hex_to_INT(s.getRESERVED1());
@@ -128,8 +127,6 @@ public  class Parser {
         strings=allData(s.getALL_DATA_DATA(),132,3);
         allData_items=bools.length+strings.length/3;
 
-
-
         System.out.println("gocbRef "+ Hex_to_ASCII(s.getGOCB_REF_DATA()));
         System.out.println("timeAllowedtoLive "+ Hex_to_INT(s.getTIME_ALLOWED_TO_LIVE_DATA()));
         System.out.println("datSet "+ Hex_to_ASCII(s.getDAT_SET_DATA()));
@@ -146,56 +143,48 @@ public  class Parser {
            System.out.println(Arrays.toString(bools));
            System.out.println(Arrays.toString(strings));
 
-
-
     }
 
     private String Hex_to_ASCII(int[]arr){
-        StringBuilder stringArray= new StringBuilder();
+        StringBuilder hexString= new StringBuilder();
         StringBuilder output = new StringBuilder("");
 
         for (int i = 0; i <arr.length ; i++) {
-            stringArray.append(Integer.toHexString(arr[i]));
+            hexString.append(Integer.toHexString(arr[i]));
         }
-        for (int i = 0; i < stringArray.length(); i += 2) {
-            String str = stringArray.substring(i, i + 2);
+        for (int i = 0; i < hexString.length(); i += 2) {
+            String str = hexString.substring(i, i + 2);
             output.append((char) Integer.parseInt(str, 16));
         }
         return output.toString();
     }
     private int Hex_to_INT(int[]arr){
-        StringBuilder stringArray= new StringBuilder();
+        StringBuilder hexString= new StringBuilder();
         for (int i = 0; i <arr.length ; i++) {
-            stringArray.append(Integer.toHexString(arr[i]));
+            hexString.append(Integer.toHexString(arr[i]));
         }
-        int integer=Integer.parseInt(String.valueOf(stringArray),16);
+        int integer=Integer.parseInt(String.valueOf(hexString),16);
         return integer;
     }
-    private double Hex_to_time(int[]arr){
-        StringBuilder stringArray= new StringBuilder();
-
-        for (int i = 0; i <arr.length ; i++) {
-            stringArray.append(Integer.toHexString(arr[i]));
+    private double Hex_to_time(int[]arr) {
+        //not working correctly
+        StringBuilder hexString= new StringBuilder();
+        for (int i = 0; i < arr.length; i++) {
+            String hex = Integer.toHexString(0xFF & arr[i]);//to prevent losing leading zeroes
+            if (hex.length() == 1) {
+                hexString.append('0');
+            }
+            hexString.append(hex);
         }
-        System.out.println(stringArray);
-        java.util.Date date=new java.util.Date(Long.parseLong(String.valueOf("386ebbf34217280a"),16));
-//        ByteBuffer byteBuffer = ByteBuffer.allocate(s.getTIME_DATA().length * 4);
-//        IntBuffer intBuffer = byteBuffer.asIntBuffer();
-//        intBuffer.put(s.getTIME_DATA());
-//
-//        byte[] array = byteBuffer.array();
-//        byte[] en = Base64.getEncoder().encode(array);
-//        System.out.println(Arrays.toString(array));
-
+        java.util.Date date=new java.util.Date(Long.parseLong(String.valueOf(hexString),16));
         goose.Timestamp ts=new goose.Timestamp(date.getTime());
-
         return ts.getTimestamp();
     }
     private boolean Hex_to_bool(int[]arr){
-        StringBuilder stringArray= new StringBuilder();
+        StringBuilder hexString= new StringBuilder();
         boolean bool;
         for (int i = 0; i <arr.length ; i++) {
-            stringArray.append(Integer.toHexString(arr[i]));
+            hexString.append(Integer.toHexString(arr[i]));
         }
         if (arr[0]==0) bool=false;
         else bool=true;
@@ -208,11 +197,9 @@ public  class Parser {
         for (int i = 0; i <arr.length ; i++) {
             if (arr[i]==tag) count++;
         }
-
         vals=new int[count*len];
         for (int i = 0; i <arr.length ; i++) {
             if (arr[i]==tag) {
-
                     for (int k = i; k<len+i ; k++) {
                         vals[j]= (byte) arr[k+2];
                         j++;
@@ -230,5 +217,4 @@ public  class Parser {
         }
         return val;
     }
-
 }

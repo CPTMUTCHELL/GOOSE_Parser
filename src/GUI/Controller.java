@@ -27,25 +27,25 @@ public class Controller {
     private Capturer capturer=new Capturer();
     private Parser p=capturer.getP();
     boolean isrunning=true;
-    Thread date;
-    int device;
+    private Thread date;
+    private int device;
 
     @FXML
     void initialize() throws PcapNativeException {
 
-        capturer.getdevs();
+        capturer.getdevs(); //looking for devices
 
         devs.setMaxWidth(800);
         devs.setWrapText(true);
-
-        devs.setText(capturer.getText());
+        devs.setText(capturer.getText());//showing found devices
         choice.setOnAction(event -> {
             choice.getScene().getWindow().hide();
 
+            //Thread for capturing packets
             date=new Thread(this::handleThread);
             date.start();
 
-
+                //Creating appController for the 2nd window
                 FXMLLoader loader = new FXMLLoader();
                 loader.setLocation(getClass().getResource("/GUI/app.fxml"));
 
@@ -72,13 +72,12 @@ public class Controller {
 
     private void handleThread(){
         while (isrunning){
-                    device=Integer.parseInt(dev_num_input.getText().trim());
-                    try {
-                        capturer.capture(device);
-                    } catch (PcapNativeException | NotOpenException e) {
-                        e.printStackTrace();
-                    }
-
+            device=Integer.parseInt(dev_num_input.getText().trim());//reads a user's input
+            try {
+                capturer.capture(device);
+            } catch (PcapNativeException | NotOpenException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

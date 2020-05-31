@@ -7,32 +7,28 @@ import org.pcap4j.util.ByteArrays;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class Capturer {
 
     //    static String folderpath = "C:\\Users\\1\\Downloads\\pcap\\";
-     private Storage s = new Storage();
-     Parser p=new Parser(s);
-    private volatile  static int check=0;
+     private Storage s = new Storage(); //storage class, for storing data in unsigned bytes
+     private Parser p=new Parser(s); //class- bytes converter to required data types
     private volatile static boolean Captured=false;
+   private AtomicBoolean captured=new AtomicBoolean(false); //Atomic for getting correct value in appController
 
-    public  boolean isCaptured() {
-        return Captured;
+    public AtomicBoolean getCap() {
+        return captured ;
     }
-
+    
     private String g_hex ,e_hex;
      private volatile static int count;
      private String text="";
-      ArrayList<String> devsfound=new ArrayList<>();
-        List<PcapNetworkInterface> devs;
-    PcapNetworkInterface in;
-     static String name;
-
-
-    public String getName() {
-       return name;
-    }
+     private ArrayList<String> devsfound=new ArrayList<>();
+      private List<PcapNetworkInterface> devs;
+    private PcapNetworkInterface in;
+     private static String name;
 
     public Parser getP() {
         return p;
@@ -54,9 +50,10 @@ public class Capturer {
 
 //        File file = new File(folderpath);
 //        File[] files = file.listFiles();
-        in = devs.get(i);
+        in = devs.get(i);//chosen device
         System.out.println("device "+in);
         name=in.toString();
+        //capture online
         PcapHandle handle=in.openLive(65536, PcapNetworkInterface.PromiscuousMode.PROMISCUOUS,20);
         String filter = "ether proto 0x88b8"; //Capture only Ethernet type ether proto 0x88b8
         handle.setFilter(filter, BpfProgram.BpfCompileMode.OPTIMIZE);
@@ -65,7 +62,8 @@ public class Capturer {
         PacketListener listener = new PacketListener()  {
             @Override
             public synchronized void gotPacket(Packet packet) {
-                Captured=true;
+                captured.set(true);
+                System.out.println(Captured);
                 System.out.println("Packet "+ count +" received: "+ packet);
                 byte[] etherheader=packet.getHeader().getRawData();
                 byte[] gooseheader = (packet.getPayload().getRawData());
@@ -74,24 +72,24 @@ public class Capturer {
                 p.setDestination(e_hex.substring(0,17));
                 p.setSource(e_hex.substring(18,35));
 
-
                 int[] bytes = new int[gooseheader.length];
                 for (int j = 0; j < gooseheader.length; j++) {
-                    bytes[j] = gooseheader[j] & 0xFF;
+                    bytes[j] = gooseheader[j] & 0xFF; //bytes to unsigned bytes to be able to read tags
                 }
                 System.out.println("bait "+Arrays.toString(bytes));
-
-                s.setPacket(packet);
                 s.setAPPID(start_info(bytes, s.getLENGTH().length, 0));
                 s.setLENGTH(start_info(bytes, s.getLENGTH().length, 2));
                 s.setRESERVED1(start_info(bytes, s.getLENGTH().length, 4));
                 s.setRESERVED2(start_info(bytes, s.getLENGTH().length, 6));
                 s.setApdu_length(apdu_length(bytes));
                 s.setADPU_LENGTH(apdu_length_filler(bytes));
+                s.setGOCB_REF_LENGTH(length(bytes,s.getGOCB_REF_TAG()));
                 s.setGOCB_REF_DATA(apdu_filler(bytes, s.getGOCB_REF_TAG(), s.getGOCB_REF_LENGTH()));
-                s.setTIME_ALLOWED_TO_LIVE_LENGTH(length(bytes,s.getTIME_ALLOWED_TO_LIVE_TAG(),s.getDAT_SET_TAG()));
+                s.setTIME_ALLOWED_TO_LIVE_LENGTH(length(bytes,s.getTIME_ALLOWED_TO_LIVE_TAG()));
                 s.setTIME_ALLOWED_TO_LIVE_DATA(apdu_filler(bytes, s.getTIME_ALLOWED_TO_LIVE_TAG(), s.getTIME_ALLOWED_TO_LIVE_LENGTH()));
+                s.setDAT_SET_LENGTH(length(bytes,s.getDAT_SET_TAG()));
                 s.setDAT_SET_DATA(apdu_filler(bytes,s.getDAT_SET_TAG(),s.getDAT_SET_LENGTH()));
+                s.setGO_ID_LENGTH(length(bytes,s.getGO_ID_TAG()));
                 s.setGO_ID_DATA(apdu_filler(bytes,s.getGO_ID_TAG(),s.getGO_ID_LENGTH()));
                 s.setTIME_DATA(apdu_filler(bytes,s.getTIME_TAG(),s.getTIME_LENGTH()));
                 s.setST_NUM_DATA(apdu_filler(bytes,s.getST_NUM_TAG(),s.getST_NUM_LENGTH()));
@@ -101,28 +99,26 @@ public class Capturer {
                 s.setCONF_REF_DATA(apdu_filler(bytes,s.getCONF_REF_TAG(),s.getCONF_REF_LENGTH()));
                 s.setNDS_COM_DATA(apdu_filler(bytes,s.getNDS_COM_TAG(),s.getNDS_COM_LENGTH()));
                 s.setNUM_DAT_SET_ENTRIES_DATA(apdu_filler(bytes,s.getNUM_DAT_SET_ENTRIES_TAG(),s.getNUM_DAT_SET_ENTRIES_LENGTH()));
+                s.setALL_DATA_LENGTH(length(bytes,s.getALL_DATA_TAG()));
                 s.setALL_DATA_DATA(apdu_filler(bytes,s.getALL_DATA_TAG(),s.getALL_DATA_LENGTH()));
                 p.show();
                 count++;
-
                 System.out.println();
-                Captured=false;
+
             }
         };
         try {
-            int maxPackets = 50;
-            handle.loop(maxPackets, listener);
+
+            handle.loop(-1, listener); //infinite loop
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
         handle.close();
     }
 
 
-
     private int[] start_info(int[] arr, int length, int j) {
-
+        //method returns APPID, Length, reserved1, reserved2 data
         int[] temp = new int[length];
         for (int i = j; i < length + j; i++) {
             temp[i - j] = arr[i];
@@ -130,7 +126,8 @@ public class Capturer {
         return temp;
     }
 
-     int[] apdu_filler(int[] arr, int tag, int len) {
+     private int[] apdu_filler(int[] arr, int tag, int len) {
+        //method returns attribute's data
         int[] temp = new int[len];
         int i;
         for (i = 0; i <arr.length ; i++) {
@@ -147,7 +144,8 @@ public class Capturer {
         }
         return temp;
     }
-    private int length(int[]arr, int start, int end){
+    private int length(int[]arr, int start){
+        //method to define length of a goose-message attribute
         int i=0; int a=0; int b=0;
         for (i = 0; i <arr.length ; i++) {
             if (arr[i]==s.getGOCB_REF_TAG()) break;// start with 0x80
@@ -155,11 +153,12 @@ public class Capturer {
         }
         for (a=i; a <arr.length ; a++) {
             if (arr[a]==start) break;
+
         }
-        for (b = i; b <arr.length ; b++) {
-            if (arr[b]==end) break;
-        }
-        return b-a-2;
+//        for (b = i; b <arr.length ; b++) {
+//            if (arr[b]==end) break;
+//        }
+        return arr[a+1];
     }
 
 
@@ -188,5 +187,6 @@ public class Capturer {
         }
         return j-i-1;
     }
+
 
 }

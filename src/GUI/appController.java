@@ -39,12 +39,13 @@ public class appController  {
         TableView.setRoot(parent);
         TableView.setShowRoot(false);
 
+        //Thread for updating GUI
         Thread thread = new Thread(() -> {
             Runnable updater = new Runnable()  {
 
                 @Override
                 public void run() {
-                    if (capturer.isCaptured()){
+                    if (capturer.getCap().compareAndSet(true,false)){
                         parent.getChildren().add(showPacket());
                     }
                 }
@@ -52,7 +53,7 @@ public class appController  {
 
             while (true) {
                 try {
-                    Thread.sleep(1);
+                    Thread.sleep(1);//necessery to avoid GUI freezing
                 } catch (InterruptedException ignored) {
                 }
 
@@ -63,6 +64,7 @@ public class appController  {
         thread.start();
 
     }
+    //Class for showing a correct result in columns
     class Goose{
         SimpleStringProperty data;
         SimpleStringProperty value;
@@ -85,8 +87,6 @@ public class appController  {
         TreeItem <Goose> root=new TreeItem<>(new Goose("GOOSE",""));
         TreeItem <Goose> goosepdu=new TreeItem<>(new Goose("goosePdu",""));
         TreeItem <Goose> ethernet=new TreeItem<>(new Goose("Ethernet",""));
-        TreeItem <Goose> allData=new TreeItem<>(new Goose("allData: "+ p.getAllData_items()+" items",""));
-
 
         TreeItem <Goose> destination=new TreeItem<>(new Goose("Destination",p.getDestination()));
         TreeItem <Goose> source=new TreeItem<>(new Goose("Source",p.getSource()));
@@ -107,9 +107,7 @@ public class appController  {
         TreeItem <Goose> ndsCom=new TreeItem<>(new Goose("ndsCom:",String.valueOf(p.isNdsCom())));
         TreeItem <Goose> numDatSet=new TreeItem<>(new Goose("numDatSet:",String.valueOf(p.getNumdatSet())));
 
-
-
-        goosepdu.getChildren().setAll(gocbRef,time,datSet,goID,stNum,sqNum,test,confRef,ndsCom,numDatSet,allData);
+        goosepdu.getChildren().setAll(gocbRef,time,datSet,goID,stNum,sqNum,test,confRef,ndsCom,numDatSet,showallData(p.getAllData_items()));
         ethernet.getChildren().setAll(destination,source);
         root.getChildren().setAll(ethernet,appid,length,reserved1,reserved2,goosepdu);
         col1.setCellValueFactory(param -> param
@@ -120,17 +118,27 @@ public class appController  {
         return root;
     }
     private TreeItem<Goose> showallData(int num){
+        TreeItem <Goose> allData=new TreeItem<>(new Goose("allData:",p.getAllData_items()+" items"));
         int j=0;
+        int q=0;
         for (int i = 0; i <num ; i++) {
             if (i%2==0) {
                 TreeItem<Goose> dataroot = new TreeItem<>(new Goose("Data: boolean (3)",""));
                 TreeItem<Goose> dataval = new TreeItem<>(new Goose("boolean:",String.valueOf(p.getBools()[j])));
                 j++;
-                dataroot.getChildren().setAll(dataval);
+                dataroot.getChildren().add(dataval);
+                allData.getChildren().add(dataroot);
+            }
+            else{
+                TreeItem<Goose> dataroot = new TreeItem<>(new Goose("Data: bit-string (4)",""));
+                TreeItem<Goose> datapadding = new TreeItem<>(new Goose("Padding:",String.valueOf(p.getStrings()[q])));
+                TreeItem<Goose> bitstring1=new TreeItem<>(new Goose("bit-string:",String.valueOf(p.getStrings()[q+1]+
+                        p.getStrings()[q+2])));
+                q+=3;
+                dataroot.getChildren().setAll(datapadding,bitstring1);
+                allData.getChildren().add(dataroot);
             }
         }
-        TreeItem <Goose> allData=new TreeItem<>(new Goose("allData: "+ p.getAllData_items()+" items",""));
-        allData.getChildren().add();
         return allData;
     }
 

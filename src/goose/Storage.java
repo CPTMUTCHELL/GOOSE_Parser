@@ -1,19 +1,14 @@
 package goose;
 
-import org.pcap4j.packet.Packet;
 
 public class Storage {
     private int apdu_length;
+
     private int TIME_ALLOWED_TO_LIVE_LENGTH;
-    private Packet packet;
+    private int GOCB_REF_LENGTH;
 
-
-    public Packet getPacket() {
-        return packet;
-    }
-
-    public void setPacket(Packet packet) {
-        this.packet = packet;
+    public void setGOCB_REF_LENGTH(int GOCB_REF_LENGTH) {
+        this.GOCB_REF_LENGTH = GOCB_REF_LENGTH;
     }
 
     public int getApdu_length() {
@@ -37,20 +32,30 @@ public class Storage {
     private int[] ADPU_LENGTH = new int[apdu_length];
 
     private int GOCB_REF_TAG = 0x80;
-    private int GOCB_REF_LENGTH = 26;
-    private int[] GOCB_REF_DATA = new int[26];
+
+    private int[] GOCB_REF_DATA = new int[GOCB_REF_LENGTH];
 
     private int TIME_ALLOWED_TO_LIVE_TAG = 0x81;
 
     private int[] TIME_ALLOWED_TO_LIVE_DATA = new int[TIME_ALLOWED_TO_LIVE_LENGTH];
 
     private int DAT_SET_TAG = 0x82;
-    private int DAT_SET_LENGTH = 24;
-    private int[] DAT_SET_DATA = new int[24];
+    private int DAT_SET_LENGTH;
+
+    public void setDAT_SET_LENGTH(int DAT_SET_LENGTH) {
+        this.DAT_SET_LENGTH = DAT_SET_LENGTH;
+    }
+
+    private int[] DAT_SET_DATA = new int[DAT_SET_LENGTH];
 
     private int GO_ID_TAG = 0x83;
-    private int GO_ID_LENGTH = 11;
-    private int[] GO_ID_DATA = new int[11];
+    private int GO_ID_LENGTH;
+
+    public void setGO_ID_LENGTH(int GO_ID_LENGTH) {
+        this.GO_ID_LENGTH = GO_ID_LENGTH;
+    }
+
+    private int[] GO_ID_DATA = new int[GO_ID_LENGTH];
 
     private int TIME_TAG = 0x84;
     private int TIME_LENGTH = 8;
@@ -81,8 +86,13 @@ public class Storage {
     private int[] NUM_DAT_SET_ENTRIES_DATA = new int[1];
 
     private int ALL_DATA_TAG = 0xab;
-    private int ALL_DATA_LENGTH = 32;
-    private int[] ALL_DATA_DATA = new int[32];
+    private int ALL_DATA_LENGTH;
+
+    public void setALL_DATA_LENGTH(int ALL_DATA_LENGTH) {
+        this.ALL_DATA_LENGTH = ALL_DATA_LENGTH;
+    }
+
+    private int[] ALL_DATA_DATA = new int[ALL_DATA_LENGTH];
 
     public void setTIME_ALLOWED_TO_LIVE_DATA(int[] TIME_ALLOWED_TO_LIVE_DATA) {
         this.TIME_ALLOWED_TO_LIVE_DATA = TIME_ALLOWED_TO_LIVE_DATA;
