@@ -1,112 +1,42 @@
 package goose;
+import lombok.Data;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 import java.util.Arrays;
 
-
+@Data
+@RequiredArgsConstructor
 public  class Parser {
     private String destination, source;
-
-    public String getDestination() {
-        return destination;
-    }
-
-    public void setDestination(String destination) {
-        this.destination = destination;
-    }
-
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
-    }
-
-    private Storage s;
+    private final Storage s;
+    @Getter
     private static String gocbRef,datSet,goID;
+    @Getter
     private static int appid;
+    @Getter
     private static int length;
+    @Getter
     private static int timeAllowedtoLive;
+    @Getter
     private static int sqNum,stNum;
+    @Getter
     private static int confRef;
+    @Getter
     private static int numdatSet;
+    @Getter
     private static int reserved1;
+    @Getter
     private static int reserved2;
+    @Getter
     private static boolean test, ndsCom;
+    @Getter
     private static int allData_items;
+    @Getter
     private static boolean[] bools;
+    @Getter
     private static int[] strings;
 
-    public String getDatSet() {
-        return datSet;
-    }
-
-    public String getGoID() {
-        return goID;
-    }
-
-    public int getLength() {
-        return length;
-    }
-
-    public int getSqNum() {
-        return sqNum;
-    }
-
-    public int getStNum() {
-        return stNum;
-    }
-
-    public int getConfRef() {
-        return confRef;
-    }
-
-    public int getNumdatSet() {
-        return numdatSet;
-    }
-
-    public int getReserved1() {
-        return reserved1;
-    }
-
-    public int getReserved2() {
-        return reserved2;
-    }
-
-    public boolean isTest() {
-        return test;
-    }
-
-    public int getAllData_items() {
-        return allData_items;
-    }
-
-    public boolean isNdsCom() {
-        return ndsCom;
-    }
-
-    public String getGocbRef() {
-        return gocbRef;
-    }
-
-    public  int getTimeAllowedtoLive() {
-        return timeAllowedtoLive;
-    }
-
-    public  int getAppid() {
-        return appid;
-    }
-
-    public Parser(Storage s) {
-        this.s = s;
-    }
-
-    public boolean[] getBools() {
-        return bools;
-    }
-
-    public int[] getStrings() {
-        return strings;
-    }
 
     public synchronized void show()  {
         appid=Hex_to_INT(s.getAPPID());
